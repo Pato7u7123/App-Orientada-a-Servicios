@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ServiConecta — Demo de Aplicación Orientada a Servicios</title>
+<style>
+:root{
+  --bg:#0f172a; --panel:#161f36; --panel2:#1c2740; --border:#2a3655;
+  --text:#e6e9f2; --muted:#93a0bf; --accent:#f59e0b; --green:#34d399;
+  --blue:#60a5fa; --purple:#a78bfa;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){ --bg:#f4f6fb; --panel:#ffffff; --panel2:#eef1f8; --border:#dbe2f0; --text:#152039; --muted:#5b6a8c; }
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+header{padding:22px 20px 10px;text-align:center;}
+header h1{margin:0;font-size:22px;}
+header p{margin:6px 0 0;color:var(--muted);font-size:13px;}
+.wrap{max-width:1100px;margin:0 auto;padding:10px 16px 40px;display:grid;grid-template-columns:1.1fr .9fr;gap:16px;}
+@media (max-width:820px){.wrap{grid-template-columns:1fr;}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;}
+.card h2{margin:0 0 10px;font-size:15px;color:var(--accent);}
+.tag{display:inline-block;font-size:11px;background:var(--panel2);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:2px 9px;margin-left:6px;}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px;}
+input,select{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:14px;}
+button{cursor:pointer;border:none;border-radius:8px;padding:10px 14px;font-size:14px;font-weight:600;background:var(--accent);color:#1a1200;margin-top:10px;}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border);}
+button:disabled{opacity:.5;cursor:not-allowed;}
+.row{display:flex;gap:10px;}
+.row>*{flex:1;}
+.svc-list{display:grid;gap:10px;}
+.svc{border:1px solid var(--border);background:var(--panel2);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.svc div b{font-size:14px;} .svc div span{display:block;color:var(--muted);font-size:12px;}
+.svc button{margin:0;padding:7px 12px;}
+.log{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;height:340px;overflow-y:auto;}
+.log .l{padding:3px 0;border-bottom:1px dashed #1f2a45;}
+.log .gw{color:var(--accent);} .log .svc-c{color:var(--blue);} .log .ok{color:var(--green);} .log .comp{color:var(--purple);}
+.pill{font-size:11px;padding:1px 7px;border-radius:6px;margin-right:6px;}
+.pill.get{background:#0f3b2e;color:#34d399;} .pill.post{background:#3b2c0f;color:#f59e0b;}
+.status{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.chip{font-size:11px;border:1px solid var(--border);background:var(--panel2);border-radius:20px;padding:4px 10px;color:var(--muted);}
+.chip b{color:var(--green);}
+.hidden{display:none;}
+.muted{color:var(--muted);font-size:12px;}
+.footer-note{max-width:1100px;margin:0 auto 30px;padding:0 16px;color:var(--muted);font-size:12px;text-align:center;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧩 ServiConecta</h1>
+  <p>Plataforma de reservas de servicios profesionales — demo de <b>Aplicación Orientada a Servicios (SOA)</b></p>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="card">
+      <h2>1. Servicio de Usuarios <span class="tag">Auth · Autónomo</span></h2>
+      <div id="loginBox">
+        <div class="row">
+          <div><label>Nombre</label><input id="nombre" placeholder="Karla"></div>
+          <div><label>Rol</label>
+            <select id="rol"><option value="cliente">Cliente</option><option value="proveedor">Proveedor</option></select>
+          </div>
+        </div>
+        <button id="btnLogin">Iniciar sesión (POST /api/usuarios/login)</button>
+      </div>
+      <div id="sesionBox" class="hidden">
+        <p class="muted">Sesión activa como <b id="sesionNombre"></b> (<span id="sesionRol"></span>) — token JWT simulado guardado en memoria.</p>
+        <button class="secondary" id="btnLogout">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. Servicio de Catálogo <span class="tag">GET /api/catalogo/servicios</span></h2>
+      <div class="svc-list" id="catalogo"></div>
+      <div id="formProveedor" class="hidden">
+        <label>Nuevo servicio a publicar</label>
+        <div class="row">
+          <input id="nuevoTitulo" placeholder="Título del servicio">
+          <input id="nuevoPrecio" placeholder="Precio" style="max-width:110px">
+        </div>
+        <button id="btnPublicar">Publicar (POST /api/catalogo/servicios)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. Servicio de Reservas <span class="tag">compone Catálogo + Pagos + Notificaciones</span></h2>
+      <p id="reservaMsg" class="muted">Selecciona "Reservar" en un servicio del catálogo para iniciar el flujo.</p>
+      <div id="misReservas" class="svc-list"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Service Registry <span class="tag">Discoverability</span></h2>
+      <div class="status" id="registryStatus"></div>
+    </div>
+    <div class="card">
+      <h2>API Gateway — registro de llamadas en tiempo real</h2>
+      <div class="log" id="log"></div>
+      <button class="secondary" id="btnClear">Limpiar registro</button>
+    </div>
+  </div>
+</div>
+
+<p class="footer-note">Demo educativa: todos los "servicios" (Usuarios, Catálogo, Reservas, Pagos, Notificaciones) están
+implementados como módulos independientes con su propio contrato y estado, orquestados por un API Gateway simulado en el navegador,
+para ilustrar los principios de bajo acoplamiento, autonomía, descubrimiento y composición de servicios propios de SOA.</p>
+
+<script>
+/* ============ Service Registry ============ */
+const registry = new Map();
+function registrar(nombre, meta){ registry.set(nombre, {...meta, estado:"activo"}); }
+function descubrir(nombre){
+  const s = registry.get(nombre);
+  if(!s || s.estado!=="activo") throw new Error("Servicio no disponible: "+nombre);
+  return s;
+}
+registrar("Usuarios", {url:"/api/usuarios", desc:"Autenticación y perfiles"});
+registrar("Catalogo", {url:"/api/catalogo", desc:"Catálogo de servicios ofrecidos"});
+registrar("Reservas", {url:"/api/reservas", desc:"Agenda y citas"});
+registrar("Pagos", {url:"/api/pagos", desc:"Cobro y comisión"});
+registrar("Notificaciones", {url:"/api/notificaciones", desc:"Aviso al proveedor"});
+
+function paintRegistry(){
+  const box = document.getElementById("registryStatus");
+  box.innerHTML = "";
+  for(const [nombre, s] of registry){
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.innerHTML = `${nombre} <b>●</b> ${s.url}`;
+    box.appendChild(chip);
+  }
+}
+paintRegistry();
+
+/* ============ Logging (simula el Gateway) ============ */
+const logEl = document.getElementById("log");
+function log(kind, text){
+  const div = document.createElement("div");
+  div.className = "l " + kind;
+  const t = new Date().toLocaleTimeString();
+  div.textContent = `[${t}] ${text}`;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+document.getElementById("btnClear").onclick = ()=> logEl.innerHTML="";
+
+function gatewayCall(servicio, metodo, ruta, detalle){
+  const s = descubrir(servicio);
+  log("gw", `Gateway → enruta ${metodo} ${s.url}${ruta}`);
+  log("svc-c", `${servicio}Service recibe la solicitud (contrato REST/JSON)`);
+  if(detalle) log("ok", detalle);
+  return s;
+}
+
+/* ============ Servicio de Usuarios ============ */
+let sesion = null;
+document.getElementById("btnLogin").onclick = () => {
+  const nombre = document.getElementById("nombre").value.trim() || "Invitado";
+  const rol = document.getElementById("rol").value;
+  gatewayCall("Usuarios","POST","/login", `Token JWT emitido para ${nombre} (rol: ${rol})`);
+  sesion = {nombre, rol};
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("sesionBox").classList.remove("hidden");
+  document.getElementById("sesionNombre").textContent = nombre;
+  document.getElementById("sesionRol").textContent = rol;
+  document.getElementById("formProveedor").classList.toggle("hidden", rol!=="proveedor");
+};
+document.getElementById("btnLogout").onclick = () => {
+  sesion = null;
+  document.getElementById("loginBox").classList.remove("hidden");
+  document.getElementById("sesionBox").classList.add("hidden");
+  document.getElementById("formProveedor").classList.add("hidden");
+  log("gw","Sesión cerrada — token descartado en el cliente");
+};
+document.getElementById("btnPublicar").onclick = () => {
+  if(!sesion || sesion.rol!=="proveedor") return;
+  const titulo = document.getElementById("nuevoTitulo").value.trim() || "Nuevo servicio";
+  const precio = document.getElementById("nuevoPrecio").value.trim() || "0";
+  gatewayCall("Catalogo","POST","/servicios", "CatalogoService valida rol=proveedor (token JWT) y guarda el nuevo servicio");
+  catalogo.push({id:"s"+(catalogo.length+1), titulo, categoria:"Nuevo", precio, proveedor:sesion.nombre});
+  paintCatalogoList();
+  document.getElementById("nuevoTitulo").value="";
+  document.getElementById("nuevoPrecio").value="";
+};
+
+/* ============ Servicio de Catálogo ============ */
+const catalogo = [
+  {id:"s1", titulo:"Corte y peinado", categoria:"Belleza", precio:250, proveedor:"Ana R."},
+  {id:"s2", titulo:"Clase de matemáticas", categoria:"Tutoría", precio:180, proveedor:"Luis M."},
+  {id:"s3", titulo:"Reparación de laptop", categoria:"Tecnología", precio:400, proveedor:"Carlos T."},
+];
+function paintCatalogoList(){
+  const box = document.getElementById("catalogo");
+  box.innerHTML = "";
+  catalogo.forEach(s=>{
+    const div = document.createElement("div");
+    div.className = "svc";
+    div.innerHTML = `<div><span class="pill get">GET</span><b>${s.titulo}</b><span>${s.categoria} · $${s.precio} · ${s.proveedor}</span></div>`;
+    const btn = document.createElement("button");
+    btn.textContent = "Reservar";
+    btn.onclick = ()=> reservar(s.id);
+    div.appendChild(btn);
+    box.appendChild(div);
+  });
+}
+function paintCatalogo(){
+  gatewayCall("Catalogo","GET","/servicios");
+  paintCatalogoList();
+}
+paintCatalogo();
+
+/* ============ Servicio de Reservas (compone Catálogo + Pagos + Notificaciones) ============ */
+let reservas = [];
+function reservar(servicioId){
+  if(!sesion){ document.getElementById("reservaMsg").textContent = "Inicia sesión primero (Servicio de Usuarios)."; return; }
+  gatewayCall("Reservas","POST","/reservas");
+  const s = catalogo.find(x=>x.id===servicioId);
+  log("svc-c", `ReservasService solicita GET Catalogo/servicios/${servicioId} para validar disponibilidad`);
+  log("comp", `Composición de servicios: Reservas → Catálogo (obtiene datos del servicio)`);
+
+  descubrir("Pagos");
+  log("svc-c","ReservasService invoca PagosService → simula cobro de $"+s.precio);
+  log("ok","Pago autorizado (simulado)");
+
+  descubrir("Notificaciones");
+  log("svc-c","ReservasService invoca NotificacionesService → avisa al proveedor "+s.proveedor);
+  log("ok","Notificación enviada (simulada)");
+
+  const reserva = {id:"r"+(reservas.length+1), servicio:s.titulo, cliente:sesion.nombre, fecha:new Date().toLocaleDateString()};
+  reservas.push(reserva);
+  document.getElementById("reservaMsg").textContent = "Última reserva creada vía composición de 4 servicios independientes:";
+  paintReservas();
+}
+function paintReservas(){
+  const box = document.getElementById("misReservas");
+  box.innerHTML = "";
+  reservas.slice().reverse().forEach(r=>{
+    const div = document.createElement("div");
+    div.className = "svc";
+    div.innerHTML = `<div><span class="pill post">POST</span><b>${r.servicio}</b><span>Cliente: ${r.cliente} · ${r.fecha}</span></div>`;
+    box.appendChild(div);
+  });
+}
+
+log("gw","API Gateway inicializado — servicios descubiertos vía Service Registry");
+</script>
+</body>
+</html>
